@@ -19,13 +19,18 @@ void printFloatVector( vector<float>&);
 **************************************************************************************************/
 int main( int argc, char** argv)
 {
+	
+
+
+	/*
 	srand( time(0));
 	vector<float> res = getRandoms( 10, 0, 100);
 	
 	printFloatVector( res);	
 	sortRandoms( res);
 	printFloatVector( res);
-	
+	//*/
+
 	return 0;
 }
 
