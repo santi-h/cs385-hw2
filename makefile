@@ -20,6 +20,7 @@ worker: worker.cpp $(OBJECTS)
 
 clean:
 	@rm -f ./master
+	@rm -f ./worker
 	@rm -f ./*.o
 
 
