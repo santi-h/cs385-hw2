@@ -92,6 +92,32 @@ pid_t cWait4( pid_t pid, int* status, int options, struct rusage* rusage)
 	return ret;
 }
 
+int cMsgget( key_t key, int msgflg)
+{
+	int ret;
+	if( (ret = msgget( key, msgflg)) == -1) 
+		finish( "msgget() failed", 1, W_ERRNO);
+
+	return ret;
+}
+
+int cMsgsnd( int msqid, const void *msgp, size_t msgsz, int msgflg)
+{
+	int ret = msgsnd( msqid, msgp, msgsz, msgflg);
+	if( ret == -1) finish( "msgsnd() failed",1,W_ERRNO);
+	return ret;
+}
+
+
+ssize_t cMsgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp, int msgflg)
+{
+	ssize_t ret = msgrcv( msqid, msgp, msgsz, msgtyp, msgflg);
+	if( ret == -1)
+		finish( "msgrcv() failed", 1, W_ERRNO);
+	return ret;
+}
+
+
 
 
 

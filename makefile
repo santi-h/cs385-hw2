@@ -1,4 +1,4 @@
-COMPILER_OPTIONS = -Wall -g -Wno-format-security
+COMPILER_OPTIONS = -g -Wno-format-security
 COMPILE = @g++ -c $(COMPILER_OPTIONS) -o$@ $<
 COMPILE_N_LINK = @g++ $(COMPILER_OPTIONS) -o$@ $<
 
@@ -7,6 +7,10 @@ OBJECTS =	Command.o \
 			Misc.o		
 
 master: master.cpp $(OBJECTS)
+	@echo building [$@]
+	$(COMPILE_N_LINK) $(OBJECTS)
+
+worker: worker.cpp $(OBJECTS)
 	@echo building [$@]
 	$(COMPILE_N_LINK) $(OBJECTS)
 

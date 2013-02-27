@@ -4,6 +4,9 @@
 #include <unistd.h>
 #include <float.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 
 #include "Command.h"
 #include "CFuncs.h"
@@ -33,6 +36,23 @@ int main( int argc, char** argv)
 	sortRandoms( res);
 	printFloatVector( res);
 
+	int mid = cMsgget( IPC_PRIVATE, 0200 | 0400);//readbyuser, writebyuser
+	char buf[ 256];
+	int i;
+
+	for( i=0; i<nWorkers; i++) if( cFork()==0)
+	{
+		sprintf( buf, "./worker %d %f %d %d %d", i+1, res[i], mid, -1, -1);
+		Command( buf).execute(STDIN_FILENO, STDOUT_FILENO);
+	}
+
+	for( i=1; i<=nWorkers; i++)
+	{
+		cMsgrcv( mid, buf, 256, i, 0);
+		printf( "received [%s] from worker [%d]\n", buf+sizeof(long), i);
+	}
+
+	sleep( 1);
 	return 0;
 }
 
@@ -70,7 +90,7 @@ vector<float>& sortRandoms( vector<float>& randoms)
 	vector<int> closeList;
 	closeList.push_back( feed);
 	closeList.push_back( reed);
-	Command( "sort -nr").execute( feedPipe[0], readPipe[1], closeList);
+	pid_t pid = Command( "sort -nr").execute( feedPipe[0], readPipe[1], closeList);
 	close( feedPipe[0]);
 	close( readPipe[1]);
 	//*/
@@ -87,6 +107,8 @@ vector<float>& sortRandoms( vector<float>& randoms)
 
 	//* Retrieve results from pipe
 	float t;
+	int stat = -1;
+	waitpid( pid, &stat, 0);
 	buf[ read( reed, buf, 256)] = 0;
 	close( reed);
 	char* str = buf;
@@ -149,7 +171,7 @@ void getParameters(	int argc, char** argv,
 			finish( errcstr,1,0);
 	}
 
-	//* PRINT PARAMETERS
+	/* PRINT PARAMETERS
 	printf("nBuffers[%d]\n", nBuffers); 
 	printf("nWorkers[%d]\n", nWorkers); 
 	printf("sleepMin[%.2f]\n",sleepMin);

@@ -15,6 +15,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/wait.h>
+#include <sys/types.h> //needed?
+#include<sys/ipc.h> //needed?
+#include <sys/msg.h>
 
 #define W_ERRNO 1
 #define NO_ERRNO 0
@@ -27,11 +30,13 @@ int cPipe( int[2]);
 int cClose( int);
 int cDup( int);
 int cDup2( int, int);
-int cExecvp( const char*, char* const);
+int cExecvp( const char*, char* const[]);
 int cFopen( const char*, const char*);
 pid_t cFork();
 pid_t cWait4( pid_t, int*, int, struct rusage*);
-
+int cMsgget( key_t, int); 
+int cMsgsnd( int, const void*, size_t, int);
+ssize_t cMsgrcv(int, void*, size_t, long, int);
 #endif //CFUNCS_C
 
 
