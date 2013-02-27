@@ -16,8 +16,9 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <sys/types.h> //needed?
-#include<sys/ipc.h> //needed?
+#include <sys/ipc.h> //needed?
 #include <sys/msg.h>
+#include <sys/shm.h>
 
 #define W_ERRNO 1
 #define NO_ERRNO 0
@@ -37,6 +38,10 @@ pid_t cWait4( pid_t, int*, int, struct rusage*);
 int cMsgget( key_t, int); 
 int cMsgsnd( int, const void*, size_t, int);
 ssize_t cMsgrcv(int, void*, size_t, long, int);
+int cShmget(key_t key, size_t size, int shmflg);
+void *cShmat(int shmid, const void *shmaddr, int shmflg);
+int cShmdt(const void *shmaddr);
+
 #endif //CFUNCS_C
 
 

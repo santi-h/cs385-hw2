@@ -30,7 +30,9 @@ int main( int argc, char** argv)
 	char msg[256];
 	*((long*)msg) = (long)workerID;
 	sprintf( msg+sizeof(long), "%f hello from worker %d", sleepTime, workerID);
-	cMsgsnd( msgID, msg, strlen( msg+sizeof(long))+1, 0);	
+	cMsgsnd( msgID, msg, strlen( msg+sizeof(long))+1, 0);
+	int* shptr = (int*)cShmat( shmID, NULL, 0);
+	shptr[workerID] = workerID;	
 
 	return 0;
 }

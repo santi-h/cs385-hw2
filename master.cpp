@@ -1,9 +1,10 @@
+#include <stdint.h>
 #include <stdio.h>
-#include <string>
-#include <vector>
-#include <unistd.h>
-#include <float.h>
 #include <stdlib.h>
+#include <string>
+#include <unistd.h>
+#include <vector>
+#include <float.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
@@ -36,13 +37,18 @@ int main( int argc, char** argv)
 	sortRandoms( res);
 	printFloatVector( res);
 
+	int ssize = nBuffers*sizeof(int);
 	int mid = cMsgget( IPC_PRIVATE, 0200 | 0400);//readbyuser, writebyuser
+	int sid = cShmget( IPC_PRIVATE, ssize, 0200 | 0400);
+	int* shptr = (int*)cShmat( sid, NULL, 0);
+	memset( shptr, 0, ssize);
+	
 	char buf[ 256];
 	int i;
 
 	for( i=0; i<nWorkers; i++) if( cFork()==0)
 	{
-		sprintf( buf, "./worker %d %f %d %d %d", i+1, res[i], mid, -1, -1);
+		sprintf( buf, "./worker %d %f %d %d %d", i+1, res[i], mid, sid, -1);
 		Command( buf).execute(STDIN_FILENO, STDOUT_FILENO);
 	}
 
@@ -51,6 +57,9 @@ int main( int argc, char** argv)
 		cMsgrcv( mid, buf, 256, i, 0);
 		printf( "received [%s] from worker [%d]\n", buf+sizeof(long), i);
 	}
+
+	for( i=1; i<=nWorkers; i++) printf("[%d]", shptr[i]);
+	printf("\n");
 
 	sleep( 1);
 	return 0;

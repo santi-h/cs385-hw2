@@ -108,7 +108,6 @@ int cMsgsnd( int msqid, const void *msgp, size_t msgsz, int msgflg)
 	return ret;
 }
 
-
 ssize_t cMsgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp, int msgflg)
 {
 	ssize_t ret = msgrcv( msqid, msgp, msgsz, msgtyp, msgflg);
@@ -116,6 +115,49 @@ ssize_t cMsgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp, int msgflg)
 		finish( "msgrcv() failed", 1, W_ERRNO);
 	return ret;
 }
+
+int cShmget( key_t key, size_t size, int shmflg)
+{
+	int ret = shmget( key, size, shmflg);
+	if( ret == -1)
+		finish( "shmget() failed",1,W_ERRNO);
+
+	return ret;
+}
+
+void* cShmat( int shmid, const void* shmaddr, int shmflg)
+{
+	void* ret = shmat( shmid, shmaddr, shmflg);
+	if( ret == (void*)-1)
+		finish("shmat() failed",1,W_ERRNO);
+}
+
+int cShmdt( const void* shmaddr)
+{
+	int ret = shmdt( shmaddr);
+	if( ret==-1)
+		finish( "shmdt() failed",1,W_ERRNO);
+
+	return ret;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
