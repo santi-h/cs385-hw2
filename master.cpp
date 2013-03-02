@@ -48,9 +48,9 @@ int main( int argc, char** argv)
 	srand( randSeed);
 	vector<float> res = getRandoms( nWorkers, sleepMin, sleepMax);
 	
-	printFloatVector( res);	
+	printf("unsorted: ");printFloatVector( res);
 	sortRandoms( res);
-	printFloatVector( res);
+	printf("  sorted: ");printFloatVector( res);
 
 	int ssize = nBuffers*sizeof(int);
 	mid = cMsgget( IPC_PRIVATE, 0200 | 0400);//create queue
@@ -253,12 +253,15 @@ void getParameters(	int argc, char** argv,
 	
 	for( i=0; i<2; i++) if( adarg[i])
 	{
+		int newSeed = 0;
 		if( string(adarg[i])=="-lock")
 			lck = 1;
 		else if( string(adarg[i]) == "-nolock")
 			lck = 0;
-		else if( !(r=sscanf( adarg[i], "%d", &randSeed)) || r==EOF)
+		else if( sscanf( adarg[i], "%d", &newSeed) != 1)
 			finish( errcstr,1,0);
+		else
+			randSeed = newSeed;
 	}
 
 	/* PRINT PARAMETERS
