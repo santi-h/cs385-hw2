@@ -11,6 +11,7 @@
 
 #include "Command.h"
 #include "CFuncs.h"
+#include "mytypes.h"
 
 using namespace std;
 
@@ -18,6 +19,8 @@ vector<float> getRandoms( int = 1, float = 0, float = FLT_MAX);
 vector<float>& sortRandoms( vector<float>&);
 void printFloatVector( vector<float>&);
 void getParameters( int, char**, int&, int&, float&, float&, int&, bool&);
+string strbits( int);
+string strhexs( int); 
 
 /**************************************************************************************************
 * ENTRY POINT
@@ -27,7 +30,11 @@ int main( int argc, char** argv)
 	int nBuffers, nWorkers, randSeed;
 	float sleepMin, sleepMax;
 	bool lck;
-	
+	int i;
+
+	//==============================================
+	//* populate session variables
+	//==============================================
 	getParameters( argc, argv, nBuffers, nWorkers, sleepMin, sleepMax, randSeed, lck);
 
 	srand( randSeed);
@@ -38,31 +45,90 @@ int main( int argc, char** argv)
 	printFloatVector( res);
 
 	int ssize = nBuffers*sizeof(int);
-	int mid = cMsgget( IPC_PRIVATE, 0200 | 0400);//readbyuser, writebyuser
-	int sid = cShmget( IPC_PRIVATE, ssize, 0200 | 0400);
-	int* shptr = (int*)cShmat( sid, NULL, 0);
-	memset( shptr, 0, ssize);
-	
+	int mid = cMsgget( IPC_PRIVATE, 0200 | 0400);//create queue
+	int sid = cShmget( IPC_PRIVATE, ssize, 0200 | 0400);//create shared memory
+	int* shptr = (int*)cShmat( sid, NULL, 0);// attach to shared memory
+	memset( shptr, 0, ssize); // zero out shared memory
+	//*/	
+
+	//==============================================
+	//* execute workers
+	//==============================================
+	vector<pid_t> workers; // workers[i] has workerID=i+1
 	char buf[ 256];
-	int i;
-
-	for( i=0; i<nWorkers; i++) if( cFork()==0)
+	
+	for( i=0; i<nWorkers; i++)
 	{
-		sprintf( buf, "./worker %d %f %d %d %d", i+1, res[i], mid, sid, -1);
-		Command( buf).execute(STDIN_FILENO, STDOUT_FILENO);
+		sprintf( buf, "./worker %d %d %f %d %d %d", i+1, nBuffers, res[i], mid, sid, -1);
+		workers.push_back( Command( buf).execute());
 	}
-
-	for( i=1; i<=nWorkers; i++)
+	//*/
+	
+	//==============================================
+	//* get messages from message queue
+	//==============================================
+	int runningWorkers = nWorkers;
+	msg_hdr* buf_hdr;
+	msg_readerr* buf_readerr;
+	while( runningWorkers)
 	{
-		cMsgrcv( mid, buf, 256, i, 0);
-		printf( "received [%s] from worker [%d]\n", buf+sizeof(long), i);
+		cMsgrcv( mid, buf, 256, 0, 0);
+		buf_hdr = (msg_hdr*)buf;
+		if( buf_hdr->op == READ_ERR)
+		{
+			buf_readerr = (msg_readerr*)(buf+sizeof(msg_hdr));
+			printf( "worker[%ld] read error\n", buf_hdr->workerID);
+			printf( "\tat buffer index\t%d\n", buf_readerr->buf_idx);
+			printf( "\tinitial value\t%d\n", buf_readerr->ini_value);
+			printf( "\tfinal value\t%d\n", buf_readerr->fin_value);
+		} 
+		if( buf_hdr->op == DONE)
+		{
+			printf( "worker[%ld] done\n", buf_hdr->workerID);
+			runningWorkers--;
+		}
+		
 	}
+	int stat = -1;
+	for( i=0; i<(int)workers.size(); i++) waitpid( workers[i], &stat, 0);
+	//*/
 
-	for( i=1; i<=nWorkers; i++) printf("[%d]", shptr[i]);
+	//==============================================
+	//* read shared memory
+	//==============================================
+	for( i=1; i<=nWorkers; i++) printf("[%08x]", shptr[i]);
 	printf("\n");
+	//*/
 
-	sleep( 1);
+	//==============================================
+	//* cleaning up!
+	//==============================================
+	msgctl( mid, IPC_RMID, NULL); //remove queue
+	shmctl( sid, IPC_RMID, NULL); //remove shared memory
+	printf( "bye %d\n", getpid());
 	return 0;
+}
+
+/**************************************************************************************************
+* Returns string representation of 0b<n>
+**************************************************************************************************/
+string strbits( int n)
+{
+	string ret;
+	int i, m;
+	for( i=0, m=1<<31; i<32; i++, n <<= 1)
+		ret += (n&m)?'1':'0';
+	return ret;
+}
+
+/**************************************************************************************************
+* Returns string representation of 0x<n>
+**************************************************************************************************/
+string strhexs( int n)
+{
+	char buf[265];
+	sprintf( buf, "%08x", n);
+	return string( buf);
 }
 
 /**************************************************************************************************

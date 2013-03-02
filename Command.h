@@ -39,7 +39,7 @@ public:
 	Command();
 	Command( const string&);
 
-	pid_t execute( int, int, const vector<int>& = vector<int>());
+	pid_t execute( int = STDIN_FILENO, int = STDOUT_FILENO, const vector<int>& = vector<int>());
 	void set( const string&);
 	Command& operator =( const string&);
 	bool bgWait(); // background wait
