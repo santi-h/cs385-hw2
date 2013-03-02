@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <signal.h>
 
 #include "Command.h"
 #include "CFuncs.h"
@@ -15,12 +16,19 @@
 
 using namespace std;
 
+int mid; //message queue
+int sid; //shared memory
+int* shptr;
+
+
 vector<float> getRandoms( int = 1, float = 0, float = FLT_MAX);
 vector<float>& sortRandoms( vector<float>&);
 void printFloatVector( vector<float>&);
 void getParameters( int, char**, int&, int&, float&, float&, int&, bool&);
 string strbits( int);
-string strhexs( int); 
+string strhexs( int);
+void cleanup();
+void cleanup(int); 
 
 /**************************************************************************************************
 * ENTRY POINT
@@ -45,9 +53,11 @@ int main( int argc, char** argv)
 	printFloatVector( res);
 
 	int ssize = nBuffers*sizeof(int);
-	int mid = cMsgget( IPC_PRIVATE, 0200 | 0400);//create queue
-	int sid = cShmget( IPC_PRIVATE, ssize, 0200 | 0400);//create shared memory
-	int* shptr = (int*)cShmat( sid, NULL, 0);// attach to shared memory
+	mid = cMsgget( IPC_PRIVATE, 0200 | 0400);//create queue
+	sid = cShmget( IPC_PRIVATE, ssize, 0200 | 0400);//create shared memory
+	shptr = (int*)cShmat( sid, NULL, 0);// attach to shared memory
+	atexit( cleanup);
+	signal(SIGINT, cleanup);
 	memset( shptr, 0, ssize); // zero out shared memory
 	//*/	
 
@@ -96,17 +106,22 @@ int main( int argc, char** argv)
 	//==============================================
 	//* read shared memory
 	//==============================================
-	for( i=1; i<=nWorkers; i++) printf("[%08x]", shptr[i]);
-	printf("\n");
+	printf("Buffers:\n");
+	for( i=0; i<nBuffers; i++) printf("[%5d%5s]", i,""); printf("\n");
+	for( i=0; i<nBuffers; i++) printf("[0x%08x]", shptr[i]); printf("\n");
 	//*/
 
-	//==============================================
-	//* cleaning up!
-	//==============================================
+	return 0;
+}
+
+/**************************************************************************************************
+* Cleanup on exit/interrupt
+**************************************************************************************************/
+void cleanup( int i) { cleanup();}
+void cleanup()
+{
 	msgctl( mid, IPC_RMID, NULL); //remove queue
 	shmctl( sid, IPC_RMID, NULL); //remove shared memory
-	printf( "bye %d\n", getpid());
-	return 0;
 }
 
 /**************************************************************************************************

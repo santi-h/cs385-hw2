@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/shm.h>
 
 #include "CFuncs.h"
 #include "mytypes.h"
@@ -15,6 +19,8 @@ void getParameters( int, char**);
 void sendMsg( const char*);
 void readRound( int);
 void writeRound( int);
+void cleanup();
+void cleanup( int);
 
 /**************************************************************************************************
 * ENTRY POINT
@@ -23,9 +29,11 @@ int main( int argc, char** argv)
 {
 	getParameters( argc, argv);	
 	shptr = (int*)cShmat( shmID, NULL, 0);
+	atexit( cleanup);
+	signal(SIGINT, cleanup);	
+	
 	int idx, i;
-
-	//*	
+	//*
 	for( i=0, idx=workerID; i<nBuffers; i++)
 	{
 		readRound( idx);
@@ -36,13 +44,20 @@ int main( int argc, char** argv)
 		idx = (idx+workerID) % nBuffers;
 	}
 	//*/
-
+	
 	msg_hdr msg = {workerID, DONE};
 	cMsgsnd( msgID, &msg, sizeof(msg),0);	
 	return 0;
 }
 
-
+/**************************************************************************************************
+* cleanup
+**************************************************************************************************/
+void cleanup( int i){ cleanup();}
+void cleanup()
+{
+	cShmdt( (void*)shptr);
+}
 /**************************************************************************************************
 * sends <msg> with type <workerID> through queue <msgID>
 **************************************************************************************************/
@@ -95,7 +110,7 @@ void readRound( int idx)
 }
 
 /**************************************************************************************************
-A write operation will consist of the following steps:
+* A write operation will consist of the following steps:
 * Read the initial value of the buffer.
 * Sleep for sleepTime seconds. ( See above. )
 * Add 1 << ( ID – 1 ) to the value read in step (a), and store the result back into the buffer.
@@ -133,6 +148,7 @@ void getParameters( int argc, char** argv)
 	/* PRINT PARAMETERS
 	printf( "worker\n");
 	printf( "workerID[%d]\n", workerID);
+	printf( "nBuffers[%d]\n", nBuffers);
 	printf( "sleepTime[%f]\n", sleepTime);
 	printf( "msgID[%d]\n", msgID);
 	printf( "shmID[%d]\n", shmID);

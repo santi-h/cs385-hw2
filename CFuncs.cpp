@@ -130,6 +130,8 @@ void* cShmat( int shmid, const void* shmaddr, int shmflg)
 	void* ret = shmat( shmid, shmaddr, shmflg);
 	if( ret == (void*)-1)
 		finish("shmat() failed",1,W_ERRNO);
+
+	return ret;
 }
 
 int cShmdt( const void* shmaddr)
