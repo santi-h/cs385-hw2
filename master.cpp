@@ -16,15 +16,19 @@
 
 using namespace std;
 
+// session variables
 int mid; //message queue
 int sid; //shared memory
-int* shptr;
+int* shptr; //pointer to shared memory
+int nBuffers, nWorkers, randSeed;
+float sleepMin, sleepMax;
+bool lck;
 
-
+// forward declarations so main is at the top
 vector<float> getRandoms( int = 1, float = 0, float = FLT_MAX);
 vector<float>& sortRandoms( vector<float>&);
 void printFloatVector( vector<float>&);
-void getParameters( int, char**, int&, int&, float&, float&, int&, bool&);
+void getParameters( int, char**);
 string strbits( int);
 string strhexs( int);
 void cleanup();
@@ -35,15 +39,12 @@ void cleanup(int);
 **************************************************************************************************/
 int main( int argc, char** argv)
 {
-	int nBuffers, nWorkers, randSeed;
-	float sleepMin, sleepMax;
-	bool lck;
 	int i;
 
 	//==============================================
 	//* populate session variables
 	//==============================================
-	getParameters( argc, argv, nBuffers, nWorkers, sleepMin, sleepMax, randSeed, lck);
+	getParameters( argc, argv);
 
 	srand( randSeed);
 	vector<float> res = getRandoms( nWorkers, sleepMin, sleepMax);
@@ -223,11 +224,9 @@ void printFloatVector( vector<float>& vec)
 }
 
 /**************************************************************************************************
+* Populates session variables from command input or exits if error
 **************************************************************************************************/
-void getParameters(	int argc, char** argv,
-					int& nBuffers, int& nWorkers,
-					float& sleepMin, float& sleepMax,
-					int& randSeed, bool& lck)
+void getParameters(	int argc, char** argv)
 {
 	const int NBUFFERS = 1;
 	const int NWORKERS = 2;
