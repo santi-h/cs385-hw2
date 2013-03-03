@@ -306,14 +306,5 @@ void getParameters(	int argc, char** argv)
 			randSeed = newSeed;
 	}
 
-	/* PRINT PARAMETERS
-	printf("nBuffers[%d]\n", nBuffers); 
-	printf("nWorkers[%d]\n", nWorkers); 
-	printf("sleepMin[%.2f]\n",sleepMin);
-	printf("sleepMax[%.2f]\n", sleepMax);
-	printf("randSeed[%d]\n", randSeed);
-	printf("lck[%d]\n", lck);
-	//*/
-
 }
 
