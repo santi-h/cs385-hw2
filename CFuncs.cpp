@@ -143,7 +143,13 @@ int cShmdt( const void* shmaddr)
 	return ret;
 }
 
-
+int cSemget(key_t key, int nsems, int semflg)
+{
+	int ret = semget( key, nsems, semflg);
+	if( ret<0)
+		finish( "semget() failed",1,W_ERRNO);
+	return ret;
+}
 
 
 

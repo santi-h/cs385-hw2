@@ -1,3 +1,10 @@
+/**************************************************************************************************
+* Author: Santiago Herrera
+* Email: sherre9@uic.edu
+* Date: 03/2013
+* Couse: CS385 - Operating Systems
+* University: University of Illinois at Chicago
+**************************************************************************************************/
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +15,8 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
 #include <signal.h>
 
 #include "Command.h"
@@ -17,12 +26,14 @@
 using namespace std;
 
 // session variables
-int mid; //message queue
-int sid; //shared memory
-int* shptr; //pointer to shared memory
 int nBuffers, nWorkers, randSeed;
 float sleepMin, sleepMax;
 bool lck;
+
+// used in cleanup
+int mid = -1; //message queue
+int sid = -1; //shared memory
+int phid = -1; //semaphore set
 
 // forward declarations so main is at the top
 vector<float> getRandoms( int = 1, float = 0, float = FLT_MAX);
@@ -39,7 +50,12 @@ void cleanup(int);
 **************************************************************************************************/
 int main( int argc, char** argv)
 {
+	int* shptr; //pointer to shared memory
 	int i;
+
+	printf( "Author: Santiago Herrera\n");
+	printf( "ID/email: sherre9@uic.edu\n");
+	printf( "Class: CS 385, University of Illinois at Chicago\n\n");
 
 	//==============================================
 	//* populate session variables
@@ -54,12 +70,18 @@ int main( int argc, char** argv)
 	printf("  sorted: ");printFloatVector( res);
 
 	int ssize = nBuffers*sizeof(int);
-	mid = cMsgget( IPC_PRIVATE, 0200 | 0400);//create queue
-	sid = cShmget( IPC_PRIVATE, ssize, 0200 | 0400);//create shared memory
+	mid = cMsgget( IPC_PRIVATE, 0600);//create queue
+	sid = cShmget( IPC_PRIVATE, ssize, 0600);//create shared memory
 	shptr = (int*)cShmat( sid, NULL, 0);// attach to shared memory
-	atexit( cleanup);
+	atexit( cleanup); //be safe, kids
 	signal(SIGINT, cleanup);
 	memset( shptr, 0, ssize); // zero out shared memory
+	if( lck)
+	{
+		phid = cSemget( IPC_PRIVATE, nBuffers, 0600);
+		for( i=0; i<nBuffers; i++) 
+			if( semctl(phid,i,SETVAL,1)<0) finish( "semctl() failed",1,W_ERRNO);
+	}
 	//*/	
 
 	//==============================================
@@ -70,7 +92,8 @@ int main( int argc, char** argv)
 	
 	for( i=0; i<nWorkers; i++)
 	{
-		sprintf( buf, "./worker %d %d %f %d %d %d", i+1, nBuffers, res[i], mid, sid, -1);
+		sprintf( buf, "./worker %d %d %f %d %d", i+1, nBuffers, res[i], mid, sid);
+		if( lck) sprintf( buf+strlen(buf), " %d", phid);
 		workers.push_back( Command( buf).execute());
 	}
 	//*/
@@ -79,6 +102,7 @@ int main( int argc, char** argv)
 	//* get messages from message queue
 	//==============================================
 	int runningWorkers = nWorkers;
+	int readErrors = 0;
 	msg_hdr* buf_hdr;
 	msg_readerr* buf_readerr;
 	while( runningWorkers)
@@ -92,6 +116,7 @@ int main( int argc, char** argv)
 			printf( "\tat buffer index\t%d\n", buf_readerr->buf_idx);
 			printf( "\tinitial value\t%d\n", buf_readerr->ini_value);
 			printf( "\tfinal value\t%d\n", buf_readerr->fin_value);
+			readErrors++;
 		} 
 		if( buf_hdr->op == DONE)
 		{
@@ -105,11 +130,25 @@ int main( int argc, char** argv)
 	//*/
 
 	//==============================================
-	//* read shared memory
+	//* read shared memory and produce output
 	//==============================================
-	printf("Buffers:\n");
-	for( i=0; i<nBuffers; i++) printf("[%5d%5s]", i,""); printf("\n");
-	for( i=0; i<nBuffers; i++) printf("[0x%08x]", shptr[i]); printf("\n");
+	int j;
+	int affected;
+	int value;
+	for( i=0; i<nBuffers; i++)
+	{
+		value = shptr[i];
+		affected = 0;
+		printf("Buffer %d: [0x%08x], workers overwritten: ", i, value);
+		for( j=0; j<nWorkers; j++, value>>=1) if( !(value&1)) 
+		{
+			printf( "[%d]", j+1);
+			affected++;
+		}
+		if( !affected) printf("none");
+		printf("\n");
+	}
+	printf( "%d read errors occurred\n", readErrors);
 	//*/
 
 	return 0;
@@ -123,6 +162,7 @@ void cleanup()
 {
 	msgctl( mid, IPC_RMID, NULL); //remove queue
 	shmctl( sid, IPC_RMID, NULL); //remove shared memory
+	if( phid>=0) semctl( phid, 0, IPC_RMID);
 }
 
 /**************************************************************************************************
@@ -215,6 +255,7 @@ vector<float>& sortRandoms( vector<float>& randoms)
 }
 
 /**************************************************************************************************
+* Prints <vec> out to the screen
 **************************************************************************************************/
 void printFloatVector( vector<float>& vec)
 {

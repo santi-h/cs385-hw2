@@ -1,3 +1,10 @@
+/**************************************************************************************************
+* Author: Santiago Herrera
+* Email: sherre9@uic.edu
+* Date: 03/2013
+* Couse: CS385 - Operating Systems
+* University: University of Illinois at Chicago
+**************************************************************************************************/
 #ifndef MYTYPES_H
 #define MYTYPES_H
 

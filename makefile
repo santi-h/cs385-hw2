@@ -4,7 +4,7 @@ COMPILE_N_LINK = @g++ $(COMPILER_OPTIONS) -o$@ $<
 
 OBJECTS =	Command.o \
 			CFuncs.o \
-			Misc.o		
+			Misc.o
 
 all: master worker
 

@@ -1,3 +1,10 @@
+/**************************************************************************************************
+* Author: Santiago Herrera
+* Email: sherre9@uic.edu
+* Date: 03/2013
+* Couse: CS385 - Operating Systems
+* University: University of Illinois at Chicago
+**************************************************************************************************/
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -10,7 +17,8 @@
 #include "mytypes.h"
 
 // session variables
-int workerID, nBuffers, msgID, shmID, semID;
+int workerID, nBuffers, msgID, shmID;
+int semID = -1;
 float sleepTime;
 int* shptr;
 
@@ -120,14 +128,35 @@ void readRound( int idx)
 **************************************************************************************************/
 void writeRound( int idx)
 {
-	int initialVal = shptr[ idx];
+	struct sembuf op_par;
+	int initialVal;
+	
+	if( semID>=0)
+	{ // obtain lock
+		op_par.sem_num = idx;
+		op_par.sem_op = -1;
+		op_par.sem_flg = 0;
+		semop( semID, &op_par, 1);
+	}
+
+	initialVal = shptr[ idx];
 	usleep( (useconds_t)sleepTime*1000000);
 	initialVal = initialVal | ( 1 << (workerID-1));
 	
 	shptr[ idx] = initialVal;
+
+	if( semID>=0)
+	{ // release lock
+		op_par.sem_num = idx;
+		op_par.sem_op = 1;
+		op_par.sem_flg = 0;
+		semop( semID, &op_par, 1);
+	}
+	
 }
 
 /**************************************************************************************************
+* Reads command input and populates session variables
 **************************************************************************************************/
 void getParameters( int argc, char** argv)
 {
@@ -140,22 +169,10 @@ void getParameters( int argc, char** argv)
 	if( sscanf( argv[4], "%d", &msgID) != 1) finish( errcstr,1,0);
 	if( sscanf( argv[5], "%d", &shmID) != 1) finish( errcstr,1,0);
 	
-	if( argc>5)
+	if( argc>6)
 	{
-		if(sscanf( argv[5], "%d", &semID) != 1) finish( errcstr,1,0);
+		if(sscanf( argv[6], "%d", &semID) != 1) finish( errcstr,1,0);
 	}
-
-	/* PRINT PARAMETERS
-	printf( "worker\n");
-	printf( "workerID[%d]\n", workerID);
-	printf( "nBuffers[%d]\n", nBuffers);
-	printf( "sleepTime[%f]\n", sleepTime);
-	printf( "msgID[%d]\n", msgID);
-	printf( "shmID[%d]\n", shmID);
-	printf( "semID[%d]\n", semID);
-	printf( "\n");
-	//*/
-	
 }
 
 

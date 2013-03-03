@@ -1,7 +1,7 @@
 /**************************************************************************************************
 * Author: Santiago Herrera
 * Email: sherre9@uic.edu
-* Date: 02/2013
+* Date: 03/2013
 * Couse: CS385 - Operating Systems
 * University: University of Illinois at Chicago
 **************************************************************************************************/
@@ -19,6 +19,7 @@
 #include <sys/ipc.h> //needed?
 #include <sys/msg.h>
 #include <sys/shm.h>
+#include <sys/sem.h>
 
 #define W_ERRNO 1
 #define NO_ERRNO 0
@@ -41,6 +42,7 @@ ssize_t cMsgrcv(int, void*, size_t, long, int);
 int cShmget(key_t key, size_t size, int shmflg);
 void *cShmat(int shmid, const void *shmaddr, int shmflg);
 int cShmdt(const void *shmaddr);
+int cSemget(key_t, int, int);
 
 #endif //CFUNCS_C
 
