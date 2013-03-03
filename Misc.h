@@ -1,11 +1,12 @@
 /**************************************************************************************************
 * Author: Santiago Herrera
 * Email: sherre9@uic.edu
+* ACCC username: sherre9
+* CS username: sherrer1
 * Date: 03/2013
 * Couse: CS385 - Operating Systems
 * University: University of Illinois at Chicago
 **************************************************************************************************/
-
 #ifndef MISC_H
 #define MISC_H
 

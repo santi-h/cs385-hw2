@@ -1,0 +1,56 @@
+/**************************************************************************************************
+* Author: Santiago Herrera
+* Email: sherre9@uic.edu
+* ACCC username: sherre9
+* CS username: sherrer1
+* Date: 03/2013
+* Couse: CS385 - Operating Systems
+* University: University of Illinois at Chicago
+**************************************************************************************************/
+
+Project #2
+For specific details about the project, please refer to the project description document named
+HW2-385-Fall2013.pdf
+The execution of the program is initialized by "master", which forks several "worker"s that
+perform read/write operations on a single block of shared memory in a round robbin fashion, and
+comunicate progress to the master through message ueues.
+The purpose of this project is to understand the use of IPC resources: queues, shared memory, and
+semaphores
+
+master.cpp:	The input to this program complies with the requirements stated in the project
+			description.
+			It outputs:
+			(1) the sleep time assigned to each worker, ordered randomly,
+			(2) the sleep time assigned to each worker, sorted by executing "sort -nr" and feeding
+			the input through a pipe,
+			(3) details of each read error encountered by each worker, as they encounter them,
+			(4) final status of the shared memory, indicating, for each element, which worker was
+			affected by a race condition during its write operation, and
+			(5) total number of read errors
+
+worker.cpp:	The input to this program complies with the requirements stated in the project
+			description.
+			On each read round, it informs the master through a message queue if it discovered a read
+			error.
+			On each write round, it sets the the workerID'th bit of the element in shared memory it
+			is writing to.
+			When it completes its operations, it sends another message to the master indicating
+			that it's done, and exits not before detaching its process from the shared memory block.
+
+Command.h:	Represents a single command such as "ls -l" or "cp file1 file2". This object is used to
+			call "sort -nr" for sorting the sleeptimes. It is also used to call the workers. This
+			object performs the actual fork() operation. It was written for the statsh project, and
+			was proven to be very useful in this project as well.
+
+CFuncs.h:	Contains wrappers of C-system functions that check for errors. Most of the functions in
+			this file have the format c<function>(<params>), where <function> is the C function
+			equivalent with the first letter capitalized, and <params> are the same parameters as
+			the original function.
+
+Misc.h		Declares multiple-purpose operations. In this project it was used to "tokenize" the
+			command line parameters and get the inputs
+
+
+
+
+
