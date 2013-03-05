@@ -12,6 +12,7 @@
 
 #include <string>
 #include <vector>
+#include <math.h>
 
 enum TimeType { USER, SYSTEM};
 
@@ -19,6 +20,7 @@ using namespace std;
 
 vector<string> tokenize( const string&, char = ' ');
 string trim( const string&, char = ' ');
+int isPrime( int);
 
 #endif //MISC_H
 
