@@ -20,6 +20,7 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <signal.h>
+#include <math.h>
 
 #include "Command.h"
 #include "CFuncs.h"
@@ -45,7 +46,8 @@ void getParameters( int, char**);
 string strbits( int);
 string strhexs( int);
 void cleanup();
-void cleanup(int); 
+void cleanup( int);
+bool isprime( int); 
 
 /**************************************************************************************************
 * ENTRY POINT
@@ -103,6 +105,7 @@ int main( int argc, char** argv)
 	//==============================================
 	//* get messages from message queue
 	//==============================================
+	printf( "Executing round robin...\n");
 	int runningWorkers = nWorkers;
 	int readErrors = 0;
 	msg_hdr* buf_hdr;
@@ -282,7 +285,7 @@ void getParameters(	int argc, char** argv)
 	lck = 0;
 	if( argc < 5 || argc>7) finish( errcstr,1,0);
 
-	if( !(r=sscanf(argv[NBUFFERS],"%d",&nBuffers)) || r==EOF)
+	if( !(r=sscanf(argv[NBUFFERS],"%d",&nBuffers)) || r==EOF || !isprime(nBuffers))
 		finish( errcstr,1,0);
 	if( !(r=sscanf(argv[NWORKERS],"%d",&nWorkers)) || r==EOF || nWorkers>=nBuffers || nWorkers<=0)
 		finish( errcstr,1,0);
@@ -307,4 +310,18 @@ void getParameters(	int argc, char** argv)
 	}
 
 }
+
+/**************************************************************************************************
+*
+**************************************************************************************************/
+bool isprime( int n)
+{
+	if( n<2) return 0;
+	int limit = (int)ceil( sqrt( (double)n));
+	for( int i=2; i<=limit && i<n; i++) if( !(n%i)) return 0;
+	return 1;
+}
+
+
+
 
